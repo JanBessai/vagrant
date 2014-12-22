@@ -64,16 +64,15 @@ VF
   #
 
   def self.it_should_set_arguments_and_environment_variables(
-    expected_args_count = 7, expected_vars_count = 4, expected_host_key_checking = false, expected_transport_mode = "ssh")
+    expected_args_count = 6, expected_vars_count = 4, expected_host_key_checking = false, expected_transport_mode = "ssh")
 
     it "sets implicit arguments in a specific order" do
       expect(Vagrant::Util::Subprocess).to receive(:execute).with { |*args|
 
         expect(args[0]).to eq("ansible-playbook")
-        expect(args[1]).to eq("--private-key=#{machine.ssh_info[:private_key_path][0]}")
-        expect(args[2]).to eq("--user=#{machine.ssh_info[:username]}")
-        expect(args[3]).to eq("--connection=ssh")
-        expect(args[4]).to eq("--timeout=30")
+        expect(args[1]).to eq("--user=#{machine.ssh_info[:username]}")
+        expect(args[2]).to eq("--connection=ssh")
+        expect(args[3]).to eq("--timeout=30")
 
         inventory_count = args.count { |x| x =~ /^--inventory-file=.+$/ }
         expect(inventory_count).to be > 0
@@ -165,7 +164,7 @@ VF
         expect(config.inventory_path).to be_nil
         expect(File.exists?(generated_inventory_file)).to be_true
         inventory_content = File.read(generated_inventory_file)
-        expect(inventory_content).to include("#{machine.name} ansible_ssh_host=#{machine.ssh_info[:host]} ansible_ssh_port=#{machine.ssh_info[:port]}\n")
+        expect(inventory_content).to include("#{machine.name} ansible_ssh_host=#{machine.ssh_info[:host]} ansible_ssh_private_key_file=#{machine.ssh_info[:private_key_path][0]} ansible_ssh_port=#{machine.ssh_info[:port]}\n")
         expect(inventory_content).to include("# MISSING: '#{iso_env.machine_names[1]}' machine was probably removed without using Vagrant. This machine should be recreated.\n")
       }
     end
@@ -273,7 +272,7 @@ VF
         config.host_key_checking = true
       end
 
-      it_should_set_arguments_and_environment_variables 7, 4, true
+      it_should_set_arguments_and_environment_variables 6, 4, true
     end
 
     describe "with boolean (flag) options disabled" do
@@ -285,7 +284,7 @@ VF
         config.sudo_user = 'root'
       end
 
-      it_should_set_arguments_and_environment_variables 8
+      it_should_set_arguments_and_environment_variables 7
       it_should_set_optional_arguments({ "sudo_user" => "--sudo-user=root" })
 
       it "it does not set boolean flag when corresponding option is set to false" do
@@ -314,7 +313,7 @@ VF
                                 "--new-arg=yeah"]
       end
 
-      it_should_set_arguments_and_environment_variables 18, 4, false, "paramiko"
+      it_should_set_arguments_and_environment_variables 17, 4, false, "paramiko"
 
       it "sets all raw arguments" do
         expect(Vagrant::Util::Subprocess).to receive(:execute).with { |*args|
@@ -370,7 +369,7 @@ VF
         config.ask_vault_pass = true
       end
 
-      it_should_set_arguments_and_environment_variables 8
+      it_should_set_arguments_and_environment_variables 7
 
       it "should ask the vault password" do
         expect(Vagrant::Util::Subprocess).to receive(:execute).with { |*args|
@@ -384,7 +383,7 @@ VF
         config.vault_password_file = existing_file
       end
 
-      it_should_set_arguments_and_environment_variables 8
+      it_should_set_arguments_and_environment_variables 7
 
       it "uses the given vault password file" do
         expect(Vagrant::Util::Subprocess).to receive(:execute).with { |*args|
@@ -398,7 +397,7 @@ VF
         config.raw_ssh_args = ['-o ControlMaster=no', '-o ForwardAgent=no']
       end
 
-      it_should_set_arguments_and_environment_variables 7, 4
+      it_should_set_arguments_and_environment_variables 6, 4
       it_should_explicitly_enable_ansible_ssh_control_persist_defaults
 
       it "passes custom SSH options via ANSIBLE_SSH_ARGS with the highest priority" do
@@ -432,7 +431,7 @@ VF
         ssh_info[:private_key_path] = ['/path/to/my/key', '/an/other/identity', '/yet/an/other/key']
       end
 
-      it_should_set_arguments_and_environment_variables 7, 4
+      it_should_set_arguments_and_environment_variables 6, 4
       it_should_explicitly_enable_ansible_ssh_control_persist_defaults
 
       it "passes additional Identity Files via ANSIBLE_SSH_ARGS" do
@@ -449,7 +448,7 @@ VF
         ssh_info[:forward_agent] = true
       end
 
-      it_should_set_arguments_and_environment_variables 7, 4
+      it_should_set_arguments_and_environment_variables 6, 4
       it_should_explicitly_enable_ansible_ssh_control_persist_defaults
 
       it "enables SSH-Forwarding via ANSIBLE_SSH_ARGS" do
@@ -468,7 +467,7 @@ VF
 
       it "shows the ansible-playbook command" do
         expect(machine.env.ui).to receive(:detail).with { |full_command|
-          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=false ANSIBLE_SSH_ARGS='-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --private-key=/path/to/my/key --user=testuser --connection=ssh --timeout=30 --limit='machine1' --inventory-file=#{generated_inventory_dir} playbook.yml")
+          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=false ANSIBLE_SSH_ARGS='-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --user=testuser --connection=ssh --timeout=30 --limit='machine1' --inventory-file=#{generated_inventory_dir} playbook.yml")
         }
       end
     end
@@ -478,12 +477,12 @@ VF
         config.verbose = 'v'
       end
 
-      it_should_set_arguments_and_environment_variables 8
+      it_should_set_arguments_and_environment_variables 7
       it_should_set_optional_arguments({ "verbose" => "-v" })
 
       it "shows the ansible-playbook command" do
         expect(machine.env.ui).to receive(:detail).with { |full_command|
-          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=false ANSIBLE_SSH_ARGS='-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --private-key=/path/to/my/key --user=testuser --connection=ssh --timeout=30 --limit='machine1' --inventory-file=#{generated_inventory_dir} -v playbook.yml")
+          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=false ANSIBLE_SSH_ARGS='-o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --user=testuser --connection=ssh --timeout=30 --limit='machine1' --inventory-file=#{generated_inventory_dir} -v playbook.yml")
         }
       end
     end
@@ -516,7 +515,7 @@ VF
         config.raw_ssh_args = ['-o ControlMaster=no']
       end
 
-      it_should_set_arguments_and_environment_variables 21, 4, true
+      it_should_set_arguments_and_environment_variables 20, 4, true
       it_should_explicitly_enable_ansible_ssh_control_persist_defaults
       it_should_set_optional_arguments({  "extra_vars"          => "--extra-vars=@#{File.expand_path(__FILE__)}",
                                           "sudo"                => "--sudo",
@@ -541,7 +540,7 @@ VF
 
       it "shows the ansible-playbook command, with additional quotes when required" do
         expect(machine.env.ui).to receive(:detail).with { |full_command|
-          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=true ANSIBLE_SSH_ARGS='-o IdentitiesOnly=yes -o IdentityFile=/my/key2 -o ForwardAgent=yes -o ControlMaster=no -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --private-key=/my/key1 --user=testuser --connection=ssh --timeout=30 --limit='machine*:&vagrant:!that_one' --inventory-file=#{generated_inventory_dir} --extra-vars=@#{File.expand_path(__FILE__)} --sudo --sudo-user=deployer -vvv --ask-sudo-pass --ask-vault-pass --vault-password-file=#{File.expand_path(__FILE__)} --tags=db,www --skip-tags=foo,bar --start-at-task='an awesome task' --why-not --su-user=foot --ask-su-pass --limit='all' playbook.yml")
+          expect(full_command).to eq("PYTHONUNBUFFERED=1 ANSIBLE_FORCE_COLOR=true ANSIBLE_HOST_KEY_CHECKING=true ANSIBLE_SSH_ARGS='-o IdentitiesOnly=yes -o IdentityFile=/my/key2 -o ForwardAgent=yes -o ControlMaster=no -o ControlMaster=auto -o ControlPersist=60s' ansible-playbook --user=testuser --connection=ssh --timeout=30 --limit='machine*:&vagrant:!that_one' --inventory-file=#{generated_inventory_dir} --extra-vars=@#{File.expand_path(__FILE__)} --sudo --sudo-user=deployer -vvv --ask-sudo-pass --ask-vault-pass --vault-password-file=#{File.expand_path(__FILE__)} --tags=db,www --skip-tags=foo,bar --start-at-task='an awesome task' --why-not --su-user=foot --ask-su-pass --limit='all' playbook.yml")
         }
       end
     end
