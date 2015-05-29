@@ -552,7 +552,7 @@ VF
     #
 
     context "with Docker provider on a non-Linux host" do
-      
+
       let(:fake_host_ssh_info) {{
         private_key_path: ['/path/to/docker/host/key'],
         username: 'boot9docker',
@@ -562,7 +562,7 @@ VF
       let(:fake_host_vm) {
         double("host_vm").tap do |h|
           h.stub(ssh_info: fake_host_ssh_info)
-        end      
+        end
       }
 
       before do
