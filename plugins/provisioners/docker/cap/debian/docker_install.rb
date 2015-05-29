@@ -13,7 +13,7 @@ module VagrantPlugins
                 comm.sudo("lsmod | grep aufs || modprobe aufs || apt-get install -y linux-image-extra-`uname -r`")
               end
               comm.sudo("apt-get update -y")
-              comm.sudo("apt-get install -y --force-yes -q curl")
+              comm.sudo("apt-get install -y --force-yes -q curl apt-transport-https")
               comm.sudo("curl -sSL https://get.docker.com/gpg | apt-key add -")
               comm.sudo("echo deb http://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list")
               comm.sudo("apt-get update")
